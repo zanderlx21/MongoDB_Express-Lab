@@ -6,15 +6,36 @@ import { ObjectId } from 'mongodb';
 const cartRoutes = express.Router();
 
 cartRoutes.get('/cart-items', async (req, res) => {
-//add maxPrice query params
-//add product query param to search by product name
-//add pageSize to limit the amount of objects returned from the list
+  try{
+    const MaxPrice = parseInt(req.query.maxPrice as string);
+    const Product = String(req.query.product || "");
+    const PageSize: number = parseInt(req.query.pageSize as string);
     const client = await getClient();
-    const results = await client.db().collection<Cart>('cartItems')
-    .find().toArray();                              // this is where you are displaying the full array of data
-    res.status(200).json(results);
-});
 
+if (Product) {
+    const results = await client.db().collection<Cart>('cartItems').find({product: Product}).toArray();
+    console.log(results);
+    res.json(results);   
+} else if (MaxPrice) {
+    const results = await client.db().collection<Cart>('cartItems').find({price: {$lte : MaxPrice}}).toArray();
+    console.log(results);
+    res.json(results);   
+} else if (PageSize) {
+    const results = await client.db().collection<Cart>('cartItems').find().limit(PageSize).toArray();
+    console.log(results);
+    res.json(results);   
+} else {
+  const results = await client.db().collection<Cart>('cartItems').find().toArray();
+    console.log(results);
+    res.json(results);   
+}
+} catch (error) {
+  console.error("Error: ", error);
+  res.status(500).json({message: "Internal Server Error, try again!"});
+}                   
+  
+});
+    
 cartRoutes.get('/cart-items/:id', async (req, res) => {
     const id = req.params.id;
     try{
